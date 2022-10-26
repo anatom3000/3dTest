@@ -57,6 +57,8 @@ screen = pygame.display.set_mode(RESOLUTION)
 clock = pygame.time.Clock()
 uv_to_screen_factor = RESOLUTION * np.array([1, -1])
 
+mouse_sensitivity = 1/100.0
+
 updating = False
 running = True
 while running:
@@ -64,6 +66,14 @@ while running:
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
+
+        if event.type == MOUSEMOTION:
+            if any(pygame.mouse.get_pressed(3)):
+                camera.orientation += np.array([
+                    0.0,
+                    event.rel[0] * mouse_sensitivity * RESOLUTION[1] / RESOLUTION[0],
+                    event.rel[1] * mouse_sensitivity,
+                ])
         if event.type == KEYUP:
             camera.position += np.array([1.0, 0.0, 0.0], dtype=float)
 
@@ -75,13 +85,13 @@ while running:
 
         # print(f"{projected_start = }, {projected_end = }")
 
-        projected_start *= uv_to_screen_factor
-        projected_end *= uv_to_screen_factor
-
-        projected_start += RESOLUTION / 2
-        projected_end += RESOLUTION / 2
-
         if projected_start is not None and projected_end is not None:
+            projected_start *= uv_to_screen_factor
+            projected_end *= uv_to_screen_factor
+
+            projected_start += RESOLUTION / 2
+            projected_end += RESOLUTION / 2
+
             pygame.draw.line(screen, WHITE, projected_start, projected_end)
 
     pygame.display.flip()

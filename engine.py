@@ -33,8 +33,7 @@ class Camera:
         self.position = np.zeros(3, dtype=float)
         self.orientation = np.zeros(3, dtype=float) + 0.5
 
-    def project(self, point: np.ndarray):
-
+    def to_camera_space(self, point: np.ndarray):
         sin_x = np.sin(self.orientation[2])
         sin_y = np.sin(self.orientation[1])
         sin_z = np.sin(self.orientation[0])
@@ -45,23 +44,26 @@ class Camera:
         transformed = point - self.position
 
         # TODO: rewrite camera space rotation
-        transformed[1:] = np.matmul(
-            np.array([cos_x, -sin_x, sin_x, cos_x]).reshape((2, 2)),
-            transformed[1:]
-        )
-        transformed[::2] = np.matmul(
-            np.array([cos_y, -sin_y, sin_y, cos_y]).reshape((2, 2)),
-            transformed[::2]
-        )
         transformed[:2] = np.matmul(
             np.array([cos_z, -sin_z, sin_z, cos_z]).reshape((2, 2)),
             transformed[:2]
-        )
+        )  # yaw
+        transformed[::2] = np.matmul(
+            np.array([cos_y, -sin_y, sin_y, cos_y]).reshape((2, 2)),
+            transformed[::2]
+        )  # pitch
+        transformed[1:] = np.matmul(
+            np.array([cos_x, -sin_x, sin_x, cos_x]).reshape((2, 2)),
+            transformed[1:]
+        )  # roll
 
-        if point[2] < 0:
+        return transformed
+
+    def project(self, point: np.ndarray):
+
+        transformed = self.to_camera_space(point)
+
+        if transformed[2] < 0:
             return None
 
-        # print(f"{transformed = }, {point = }")
-
-        return (transformed[:2]*self.focal_lenght) / (transformed[2]*self.focal_lenght) / self.camera_plane[:2]
-
+        return (transformed[:2] * self.focal_lenght) / (transformed[2] * self.focal_lenght) / self.camera_plane[:2]
