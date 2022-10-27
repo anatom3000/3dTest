@@ -31,7 +31,7 @@ class Camera:
         self.update_fov(fov)
 
         self.position = np.zeros(3, dtype=float)
-        self.orientation = np.zeros(3, dtype=float) + 0.5
+        self.orientation = np.zeros(3, dtype=float)
 
     def to_camera_space(self, point: np.ndarray):
         sin_x = np.sin(self.orientation[2])

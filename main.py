@@ -62,7 +62,7 @@ mouse_sensitivity = 1/100.0
 updating = False
 running = True
 while running:
-    dt = clock.tick(60)
+    dt = clock.tick(60)/1000
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
@@ -72,10 +72,33 @@ while running:
                 camera.orientation += np.array([
                     0.0,
                     event.rel[0] * mouse_sensitivity * RESOLUTION[1] / RESOLUTION[0],
-                    event.rel[1] * mouse_sensitivity,
+                    0.0#event.rel[1] * mouse_sensitivity,
                 ])
-        if event.type == KEYUP:
-            camera.position += np.array([1.0, 0.0, 0.0], dtype=float)
+
+    keys = pygame.key.get_pressed()
+
+    if keys[K_LCTRL]:
+        player_speed = 5.0
+    elif keys[K_LSHIFT]:
+        player_speed = 0.5
+    else:
+        player_speed = 1.0
+
+    if keys[K_z]:
+        camera.position += player_speed * dt * np.array([np.sin(camera.orientation[1]), 0.0, np.cos(camera.orientation[1])],
+                                                   dtype=float)
+
+    if keys[K_s]:
+        camera.position += player_speed * dt * np.array(
+            [-np.sin(camera.orientation[1]), 0.0, -np.cos(camera.orientation[1])], dtype=float)
+
+    if keys[K_q]:
+        camera.position += player_speed * dt * np.array([-np.cos(camera.orientation[1]), 0.0, np.sin(camera.orientation[1])],
+                                                   dtype=float)
+
+    if keys[K_d]:
+        camera.position += player_speed * dt * np.array([np.cos(camera.orientation[1]), 0.0, -np.sin(camera.orientation[1])],
+                                                   dtype=float)
 
     screen.fill(BLACK)
 
