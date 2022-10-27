@@ -63,7 +63,7 @@ class Camera:
 
         transformed = self.to_camera_space(point)
 
-        if transformed[2] < 0:
-            return None
+        # if transformed[2] < 0:
+        #     return None
 
         return (transformed[:2] * self.focal_lenght) / (transformed[2] * self.focal_lenght) / self.camera_plane[:2]
