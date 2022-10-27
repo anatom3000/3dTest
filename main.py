@@ -4,7 +4,7 @@ from pygame.locals import *
 
 from engine import Camera
 
-RESOLUTION = np.array([960, 720])
+RESOLUTION = np.array([720, 720])
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
@@ -15,10 +15,10 @@ vertex_buffer = np.array([
     [1, -1, 1],
     [-1, 1, 1],
     [1, 1, 1],
-    [-1, -1, 2],
-    [1, -1, 2],
-    [-1, 1, 2],
-    [1, 1, 2],
+    [-1, -1, 3],
+    [1, -1, 3],
+    [-1, 1, 3],
+    [1, 1, 3],
 ], dtype=float)
 
 edge_buffer = [
