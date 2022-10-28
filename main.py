@@ -9,18 +9,18 @@ WHITE = (255, 255, 255)
 
 
 class MainWindow:
-    resolution = np.array([720, 720])
+    resolution = np.array([960, 720])
     uv_to_screen_factor = resolution * np.array([1, -1])
 
     vertex_buffer = np.array([
+        [-1, -1, -1],
+        [1, -1, -1],
+        [-1, 1, -1],
+        [1, 1, -1],
         [-1, -1, 1],
         [1, -1, 1],
         [-1, 1, 1],
         [1, 1, 1],
-        [-1, -1, 3],
-        [1, -1, 3],
-        [-1, 1, 3],
-        [1, 1, 3],
     ], dtype=float)
     edge_buffer = [
         (0, 1),
@@ -58,8 +58,6 @@ class MainWindow:
 
         if keys[K_LCTRL]:
             player_speed = 5.0
-        elif keys[K_LSHIFT]:
-            player_speed = 1.0
         else:
             player_speed = 2.0
 
@@ -82,16 +80,22 @@ class MainWindow:
                 [np.cos(self.camera.orientation[1]), 0.0, -np.sin(self.camera.orientation[1])],
                 dtype=float)
 
+        if keys[K_LSHIFT]:
+            self.camera.position += player_speed * self.dt * np.array([0, -1, 0])
+
+        if keys[K_SPACE]:
+            self.camera.position += player_speed * self.dt * np.array([0, 1, 0])
+
     def draw_screen(self):
         self.screen.fill(BLACK)
 
         for start, end in self.edge_buffer:
-            projected_start = self.camera.project(self.vertex_buffer[start])
-            projected_end = self.camera.project(self.vertex_buffer[end])
+            projected_line = self.camera.project_line(self.vertex_buffer[start], self.vertex_buffer[end])
 
             # print(f"{projected_start = }, {projected_end = }")
 
-            if projected_start is not None and projected_end is not None:
+            if projected_line is not None:
+                projected_start, projected_end = projected_line
                 projected_start *= self.uv_to_screen_factor / 2.0
                 projected_end *= self.uv_to_screen_factor / 2.0
 
@@ -120,6 +124,10 @@ class MainWindow:
         self.handle_keypresses()
 
         self.draw_screen()
+
+        rounded_pos = list(map(lambda x: round(x, 2), self.camera.position))
+
+        pygame.display.set_caption(f"Position: {rounded_pos}")
 
         return True
 
