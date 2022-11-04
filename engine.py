@@ -66,7 +66,7 @@ class Camera:
         if point[2] < 0:
             return None
 
-        return (point[:2] * self.focal_lenght) / (point[2] * self.focal_lenght) / self.camera_plane[:2]
+        return (point[:2] * self.focal_lenght) / (point[2]) / self.camera_plane[:2]
 
     def project_point(self, point: np.ndarray) -> Optional[np.ndarray]:
 
@@ -81,21 +81,45 @@ class Camera:
         cs_start = self.to_camera_space(start_point)
         cs_end = self.to_camera_space(end_point)
 
-        if cs_start[2] > 0 and cs_end[2] > 0:
-            return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
-        elif cs_start[2] < 0 and cs_end[2] < 0:
-            return None
-        elif cs_start[2] == 0 and cs_end[2] == 0:
-            return None
-        elif cs_start[2] <= 0:
-            t_int = (self.focal_lenght - cs_end[2]) / (cs_start[2] - cs_end[2])
+        if cs_start[2] >= self.focal_lenght:
+            if cs_end[2] >= self.focal_lenght:
+                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+            elif 0.0 < cs_end[2] < self.focal_lenght:
+                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+            else:
+                intersection = cs_start[2] - self.focal_lenght
+                intersection *= cs_end[:2] - cs_start[:2]
 
-            intersection = (1 - t_int) * cs_end[:2] + t_int * cs_start[:2]
+                intersection /= cs_end[2] - cs_start[2]
+                intersection += cs_start[:2]
 
-            return intersection, self.project_camera_space_point(cs_end)
+                return self.project_camera_space_point(cs_start), intersection
+
+        elif 0.0 < cs_start[2] < self.focal_lenght:
+            if cs_end[2] >= self.focal_lenght:
+                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+            elif 0.0 < cs_end[2] < self.focal_lenght:
+                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+            else:
+                intersection = cs_start[2] - self.focal_lenght
+                intersection *= cs_end[:2] - cs_start[:2]
+
+                intersection /= cs_end[2] - cs_start[2]
+                intersection += cs_start[:2]
+
         else:
-            t_int = (self.focal_lenght - cs_start[2]) / (cs_end[2] - cs_start[2])
+            if cs_end[2] >= self.focal_lenght:
+                intersection = cs_end[2] - self.focal_lenght
+                intersection *= cs_end[:2] - cs_start[:2]
 
-            intersection = (1 - t_int) * cs_start[:2] + t_int * cs_end[:2]
+                intersection /= cs_end[2] - cs_start[2]
+                intersection += cs_end[:2]
+            elif 0.0 < cs_end[2] < self.focal_lenght:
+                intersection = cs_end[2] - self.focal_lenght
+                intersection *= cs_end[:2] - cs_start[:2]
 
-            return self.project_camera_space_point(cs_start), intersection
+                intersection /= cs_end[2] - cs_start[2]
+                intersection += cs_end[:2]
+            else:
+                return None
+

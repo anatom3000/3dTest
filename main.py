@@ -7,10 +7,13 @@ from engine import Camera
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+pygame.init()
+
 
 class MainWindow:
     resolution = np.array([960, 720])
     uv_to_screen_factor = resolution * np.array([1, -1])
+    font = pygame.font.Font(pygame.font.get_default_font(), 12)
 
     vertex_buffer = np.array([
         [-1, -1, -1],
@@ -44,12 +47,13 @@ class MainWindow:
     mouse_sensitivity = 1 / 100.0
 
     def __init__(self):
-        pygame.init()
 
         self.camera = Camera(self.resolution, focal_length=1.0, fov=120)
 
         self.screen = pygame.display.set_mode(self.resolution)
         self.clock = pygame.time.Clock()
+
+        self.factor = 1.0
 
         self.dt = 1.0
 
@@ -86,6 +90,9 @@ class MainWindow:
         if keys[K_SPACE]:
             self.camera.position += player_speed * self.dt * np.array([0, 1, 0])
 
+        if keys[K_o]:
+            self.factor = 1.0
+
     def draw_screen(self):
         self.screen.fill(BLACK)
 
@@ -94,15 +101,30 @@ class MainWindow:
 
             # print(f"{projected_start = }, {projected_end = }")
 
-            if projected_line is not None:
-                projected_start, projected_end = projected_line
-                projected_start *= self.uv_to_screen_factor / 2.0
-                projected_end *= self.uv_to_screen_factor / 2.0
+            if projected_line is None:
+                continue
 
-                projected_start += self.resolution / 2
-                projected_end += self.resolution / 2
+            projected_start, projected_end = projected_line
 
-                pygame.draw.line(self.screen, WHITE, projected_start, projected_end)
+            projected_start *= self.uv_to_screen_factor / self.factor
+            projected_end *= self.uv_to_screen_factor / self.factor
+
+            projected_start += self.resolution / 2
+            projected_end += self.resolution / 2
+
+            pygame.draw.line(self.screen, WHITE, projected_start, projected_end)
+
+        for pt in self.vertex_buffer:
+            screen_pos = self.camera.project_point(pt)
+
+            if screen_pos is not None:
+                cam_space_pos = self.camera.to_camera_space(pt).round(2)
+
+                txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True, WHITE)
+                txt_rect = txt.get_rect()
+                txt_rect.topleft = screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2
+                self.screen.blit(txt, txt_rect)
+
 
         pygame.display.flip()
 
@@ -121,13 +143,19 @@ class MainWindow:
                         0.0  # event.rel[1] * self.mouse_sensitivity,
                     ])
 
+            if event.type == MOUSEWHEEL:
+                if event.y > 0:
+                    self.factor /= 1.05
+                else:
+                    self.factor *= 1.05
+
         self.handle_keypresses()
 
         self.draw_screen()
 
         rounded_pos = list(map(lambda x: round(x, 2), self.camera.position))
 
-        pygame.display.set_caption(f"Position: {rounded_pos}")
+        pygame.display.set_caption(f"Position: {rounded_pos} | Mouse: {pygame.mouse.get_pos()}")
 
         return True
 
