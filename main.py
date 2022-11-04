@@ -141,11 +141,14 @@ class MainWindow:
                         txt = self.font.render(f"({rpt[0]}, {rpt[1]}, {rpt[2]})", True, WHITE)
 
                     txt_rect = txt.get_rect()
-                    txt_rect.topleft = screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2
-                    self.screen.blit(txt, txt_rect)
+                    txt_rect.topleft = np.maximum(
+                        0.0,
+                        screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2,
+                    )
+                    txt_rect.bottomright = np.minimum(self.resolution, txt_rect.bottomright)
 
-            label_mode_txt = self.font.render(self.label_mode_names[self.label_mode], True, WHITE)
-            self.screen.blit(label_mode_txt, (0, 0))
+
+                    self.screen.blit(txt, txt_rect)
 
         pygame.display.flip()
 
@@ -182,7 +185,7 @@ class MainWindow:
 
         rounded_pos = list(map(lambda x: round(x, 2), self.camera.position))
 
-        pygame.display.set_caption(f"Position: {rounded_pos} | Mouse: {pygame.mouse.get_pos()}")
+        pygame.display.set_caption(f"Position: {rounded_pos} | Mouse: {pygame.mouse.get_pos()} | {self.label_mode_names[self.label_mode]}")
 
         return True
 
