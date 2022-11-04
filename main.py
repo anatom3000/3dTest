@@ -59,6 +59,7 @@ class MainWindow:
         self.screen = pygame.display.set_mode(self.resolution)
         self.clock = pygame.time.Clock()
 
+        self.display_labels = True
         self.label_mode = 0
 
         self.factor = 1.0
@@ -123,26 +124,28 @@ class MainWindow:
 
             pygame.draw.line(self.screen, WHITE, projected_start, projected_end)
 
-        for pt in self.vertex_buffer:
-            screen_pos = self.camera.project_point(pt)
+        if self.display_labels:
+            for pt in self.vertex_buffer:
+                screen_pos = self.camera.project_point(pt)
 
-            if screen_pos is not None:
-                if self.label_mode == 0:
-                    rsp = screen_pos.round(2)
-                    txt = self.font.render(f"({rsp[0]}, {rsp[1]})", True, WHITE)
-                elif self.label_mode == 1:
-                    cam_space_pos = self.camera.to_camera_space(pt).round(2)
-                    txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True, WHITE)
-                else:
-                    rpt = pt.round(2)
-                    txt = self.font.render(f"({rpt[0]}, {rpt[1]}, {rpt[2]})", True, WHITE)
+                if screen_pos is not None:
+                    if self.label_mode == 0:
+                        rsp = screen_pos.round(2)
+                        txt = self.font.render(f"({rsp[0]}, {rsp[1]})", True, WHITE)
+                    elif self.label_mode == 1:
+                        cam_space_pos = self.camera.to_camera_space(pt).round(2)
+                        txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True,
+                                               WHITE)
+                    else:
+                        rpt = pt.round(2)
+                        txt = self.font.render(f"({rpt[0]}, {rpt[1]}, {rpt[2]})", True, WHITE)
 
-                txt_rect = txt.get_rect()
-                txt_rect.topleft = screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2
-                self.screen.blit(txt, txt_rect)
+                    txt_rect = txt.get_rect()
+                    txt_rect.topleft = screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2
+                    self.screen.blit(txt, txt_rect)
 
-        label_mode_txt = self.font.render(self.label_mode_names[self.label_mode], True, WHITE)
-        self.screen.blit(label_mode_txt, (0, 0))
+            label_mode_txt = self.font.render(self.label_mode_names[self.label_mode], True, WHITE)
+            self.screen.blit(label_mode_txt, (0, 0))
 
         pygame.display.flip()
 
@@ -169,7 +172,9 @@ class MainWindow:
 
             if event.type == KEYUP:
                 if event.key == K_l:
-                    self.label_mode = (self.label_mode + 1) % 2
+                    self.display_labels = not self.display_labels
+                if event.key == K_m:
+                    self.label_mode = (self.label_mode + 1) % 3
 
         self.handle_keypresses()
 
