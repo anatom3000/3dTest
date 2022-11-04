@@ -130,7 +130,7 @@ class MainWindow:
 
                 if screen_pos is not None:
                     if self.label_mode == 0:
-                        rsp = screen_pos.round(2)
+                        rsp = (screen_pos * self.uv_to_screen_factor + self.resolution / 2).astype(int)
                         txt = self.font.render(f"({rsp[0]}, {rsp[1]})", True, WHITE)
                     elif self.label_mode == 1:
                         cam_space_pos = self.camera.to_camera_space(pt).round(2)
