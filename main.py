@@ -15,6 +15,12 @@ class MainWindow:
     uv_to_screen_factor = resolution * np.array([1, -1])
     font = pygame.font.Font(pygame.font.get_default_font(), 12)
 
+    label_mode_names = [
+        "Screen Space",
+        "Camera Space",
+        "World Space"
+    ]
+
     vertex_buffer = np.array([
         [-1, -1, -1],
         [1, -1, -1],
@@ -52,6 +58,8 @@ class MainWindow:
 
         self.screen = pygame.display.set_mode(self.resolution)
         self.clock = pygame.time.Clock()
+
+        self.label_mode = 0
 
         self.factor = 1.0
 
@@ -96,6 +104,7 @@ class MainWindow:
     def draw_screen(self):
         self.screen.fill(BLACK)
 
+
         for start, end in self.edge_buffer:
             projected_line = self.camera.project_line(self.vertex_buffer[start], self.vertex_buffer[end])
 
@@ -118,13 +127,22 @@ class MainWindow:
             screen_pos = self.camera.project_point(pt)
 
             if screen_pos is not None:
-                cam_space_pos = self.camera.to_camera_space(pt).round(2)
+                if self.label_mode == 0:
+                    rsp = screen_pos.round(2)
+                    txt = self.font.render(f"({rsp[0]}, {rsp[1]})", True, WHITE)
+                elif self.label_mode == 1:
+                    cam_space_pos = self.camera.to_camera_space(pt).round(2)
+                    txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True, WHITE)
+                else:
+                    rpt = pt.round(2)
+                    txt = self.font.render(f"({rpt[0]}, {rpt[1]}, {rpt[2]})", True, WHITE)
 
-                txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True, WHITE)
                 txt_rect = txt.get_rect()
                 txt_rect.topleft = screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2
                 self.screen.blit(txt, txt_rect)
 
+        label_mode_txt = self.font.render(self.label_mode_names[self.label_mode], True, WHITE)
+        self.screen.blit(label_mode_txt, (0, 0))
 
         pygame.display.flip()
 
@@ -148,6 +166,10 @@ class MainWindow:
                     self.factor /= 1.05
                 else:
                     self.factor *= 1.05
+
+            if event.type == KEYUP:
+                if event.key == K_l:
+                    self.label_mode = (self.label_mode + 1) % 2
 
         self.handle_keypresses()
 
