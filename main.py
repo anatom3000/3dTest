@@ -105,7 +105,6 @@ class MainWindow:
     def draw_screen(self):
         self.screen.fill(BLACK)
 
-
         for start, end in self.edge_buffer:
             projected_line = self.camera.project_line(self.vertex_buffer[start], self.vertex_buffer[end])
 
@@ -115,6 +114,9 @@ class MainWindow:
                 continue
 
             projected_start, projected_end = projected_line
+
+            if projected_start is None or projected_end is None:
+                continue
 
             projected_start *= self.uv_to_screen_factor / self.factor
             projected_end *= self.uv_to_screen_factor / self.factor
@@ -176,7 +178,7 @@ class MainWindow:
             if event.type == KEYUP:
                 if event.key == K_l:
                     self.display_labels = not self.display_labels
-                if event.key == K_m:
+                if event.key == K_TAB:
                     self.label_mode = (self.label_mode + 1) % 3
 
         self.handle_keypresses()

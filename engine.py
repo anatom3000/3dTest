@@ -81,45 +81,48 @@ class Camera:
         cs_start = self.to_camera_space(start_point)
         cs_end = self.to_camera_space(end_point)
 
+        intersection = cs_end[2] - self.focal_lenght
+        intersection *= cs_end[:2] - cs_start[:2]
+
+        intersection /= cs_end[2] - cs_start[2]
+        intersection += cs_end[:2]
+
         if cs_start[2] >= self.focal_lenght:
+
             if cs_end[2] >= self.focal_lenght:
                 return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+
             elif 0.0 < cs_end[2] < self.focal_lenght:
                 return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+
             else:
-                intersection = cs_start[2] - self.focal_lenght
-                intersection *= cs_end[:2] - cs_start[:2]
-
-                intersection /= cs_end[2] - cs_start[2]
-                intersection += cs_start[:2]
-
-                return self.project_camera_space_point(cs_start), intersection
+                return self.project_line_cut(cs_start, cs_end)
 
         elif 0.0 < cs_start[2] < self.focal_lenght:
             if cs_end[2] >= self.focal_lenght:
                 return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+
             elif 0.0 < cs_end[2] < self.focal_lenght:
                 return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
-            else:
-                intersection = cs_start[2] - self.focal_lenght
-                intersection *= cs_end[:2] - cs_start[:2]
 
-                intersection /= cs_end[2] - cs_start[2]
-                intersection += cs_start[:2]
+            else:
+                return self.project_line_cut(cs_start, cs_end)
 
         else:
             if cs_end[2] >= self.focal_lenght:
-                intersection = cs_end[2] - self.focal_lenght
-                intersection *= cs_end[:2] - cs_start[:2]
+                return self.project_line_cut(cs_end, cs_start)
 
-                intersection /= cs_end[2] - cs_start[2]
-                intersection += cs_end[:2]
             elif 0.0 < cs_end[2] < self.focal_lenght:
-                intersection = cs_end[2] - self.focal_lenght
-                intersection *= cs_end[:2] - cs_start[:2]
+                return self.project_line_cut(cs_end, cs_start)
 
-                intersection /= cs_end[2] - cs_start[2]
-                intersection += cs_end[:2]
             else:
                 return None
 
+    def project_line_cut(self, onscreen: np.ndarray, offscreen: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        intersection = onscreen[2] - self.focal_lenght
+        intersection *= offscreen[:2] - onscreen[:2]
+
+        intersection /= offscreen[2] - onscreen[2]
+        intersection += onscreen[:2]
+
+        return self.project_camera_space_point(onscreen), intersection
