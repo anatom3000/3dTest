@@ -21,7 +21,7 @@ class MainWindow:
         "World Space"
     ]
 
-    vertex_buffer = np.array([
+    _vertex_buffer = np.array([
         [-1, -1, -1],
         [1, -1, -1],
         [-1, 1, -1],
@@ -31,7 +31,7 @@ class MainWindow:
         [-1, 1, 1],
         [1, 1, 1],
     ], dtype=float)
-    edge_buffer = [
+    _edge_buffer = [
         (0, 1),
         (0, 2),
         (0, 4),
@@ -44,10 +44,18 @@ class MainWindow:
         (4, 6),
         (5, 7),
         (6, 7),
-        # (0, 7),
-        # (1, 6),
-        # (2, 5),
-        # (3, 4)
+        (0, 7),
+        (1, 6),
+        (2, 5),
+        (3, 4)
+    ]
+
+    vertex_buffer = np.array([[x, y, z] for z in range(2) for x in range(2) for y in range(2)], dtype=float)
+    print(vertex_buffer)
+    print(len(vertex_buffer))
+
+    edge_buffer = [
+        (start, 4+start) for start in range(4)
     ]
 
     mouse_sensitivity = 1 / 100.0

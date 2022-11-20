@@ -27,6 +27,8 @@ class Camera:
         self.focal_lenght = length
 
     def __init__(self, resolution: np.ndarray, fov: float = 90.0, focal_length: float = 1.0):
+        self.camera_plane = None
+        self.fov = None
         self.resolution = resolution
         self.focal_lenght = focal_length
 
