@@ -26,7 +26,7 @@ class Camera:
         self.camera_plane *= length / self.focal_lenght
         self.focal_lenght = length
 
-    def __init__(self, resolution: np.ndarray, fov: float = 90.0, focal_length: float = 1.0):
+    def __init__(self, resolution: np.ndarray, fov: float = 90.0, focal_length: float = 1e-5):
         self.camera_plane = None
         self.fov = None
         self.resolution = resolution
@@ -74,7 +74,7 @@ class Camera:
 
         camera_space_point = self.to_camera_space(point)
 
-        if camera_space_point[2] < 0:
+        if camera_space_point[2] < self.focal_lenght:
             return None
 
         return self.project_camera_space_point(camera_space_point)
@@ -94,9 +94,6 @@ class Camera:
             if cs_end[2] >= self.focal_lenght:
                 return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
 
-            elif 0.0 < cs_end[2] < self.focal_lenght:
-                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
-
             else:
                 return self.project_line_cut(cs_start, cs_end)
 
@@ -104,17 +101,11 @@ class Camera:
             if cs_end[2] >= self.focal_lenght:
                 return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
 
-            elif 0.0 < cs_end[2] < self.focal_lenght:
-                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
-
             else:
                 return self.project_line_cut(cs_start, cs_end)
 
         else:
             if cs_end[2] >= self.focal_lenght:
-                return self.project_line_cut(cs_end, cs_start)
-
-            elif 0.0 < cs_end[2] < self.focal_lenght:
                 return self.project_line_cut(cs_end, cs_start)
 
             else:

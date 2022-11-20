@@ -51,8 +51,6 @@ class MainWindow:
     ]
 
     vertex_buffer = np.array([[x, y, z] for z in range(2) for x in range(2) for y in range(2)], dtype=float)
-    print(vertex_buffer)
-    print(len(vertex_buffer))
 
     edge_buffer = [
         (start, 4+start) for start in range(4)
@@ -189,13 +187,18 @@ class MainWindow:
                 if event.key == K_TAB:
                     self.label_mode = (self.label_mode + 1) % 3
 
+                if event.key == K_UP:
+                    self.camera.update_focal(self.camera.focal_lenght*2.0)
+                if event.key == K_DOWN:
+                    self.camera.update_focal(self.camera.focal_lenght/2.0)
+
         self.handle_keypresses()
 
         self.draw_screen()
 
         rounded_pos = list(map(lambda x: round(x, 2), self.camera.position))
 
-        pygame.display.set_caption(f"Position: {rounded_pos} | Mouse: {pygame.mouse.get_pos()} | {self.label_mode_names[self.label_mode]}")
+        pygame.display.set_caption(f"Position: {rounded_pos} | Focal: {self.camera.focal_lenght} | Mouse: {pygame.mouse.get_pos()} | {self.label_mode_names[self.label_mode]}")
 
         return True
 
