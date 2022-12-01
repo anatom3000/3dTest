@@ -106,14 +106,11 @@ class Camera:
                 return self.project_line_cut(cs_end, cs_start)
 
     def project_line_cut(self, onscreen: np.ndarray, offscreen: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        planeNormal = np.array([0, 0, 1])
-        planePoint = np.array([0, 0, self.focal_lenght])
+        plane_normal = np.array([0, 0, 1])
+        plane_point = np.array([0, 0, self.focal_lenght])
 
-        lineStart = onscreen
-        lineEnd = offscreen
-
-        intersection = lineStart + (lineEnd - lineStart) * (
-                    np.dot(planeNormal, planePoint) - np.dot(planeNormal, lineStart)) / np.dot(planeNormal,
-                                                                                               (lineEnd - lineStart))
+        intersection = onscreen + (offscreen - onscreen) * (
+                np.dot(plane_normal, plane_point) - np.dot(plane_normal, onscreen)) / np.dot(plane_normal,
+                                                                                          (offscreen - onscreen))
 
         return self.project_camera_space_point(onscreen), self.project_camera_space_point(intersection)
