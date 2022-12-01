@@ -68,6 +68,7 @@ class Camera:
         if point[2] < 0:
             return None
 
+        # print(f"{self.focal_lenght=}, {self.camera_plane=}")
         return (point[:2] * self.focal_lenght) / (point[2]) / self.camera_plane[:2]
 
     def project_point(self, point: np.ndarray) -> Optional[np.ndarray]:
@@ -97,25 +98,22 @@ class Camera:
             else:
                 return self.project_line_cut(cs_start, cs_end)
 
-        elif 0.0 < cs_start[2] < self.focal_lenght:
-            if cs_end[2] >= self.focal_lenght:
-                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
-
-            else:
-                return self.project_line_cut(cs_start, cs_end)
-
         else:
             if cs_end[2] >= self.focal_lenght:
                 return self.project_line_cut(cs_end, cs_start)
 
             else:
-                return None
+                return self.project_line_cut(cs_end, cs_start)
 
     def project_line_cut(self, onscreen: np.ndarray, offscreen: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        intersection = onscreen[2] - self.focal_lenght
-        intersection *= offscreen[:2] - onscreen[:2]
+        planeNormal = np.array([0, 0, 1])
+        planePoint = np.array([0, 0, self.focal_lenght])
 
-        intersection /= offscreen[2] - onscreen[2]
-        intersection += onscreen[:2]
+        lineStart = onscreen
+        lineEnd = offscreen
 
-        return self.project_camera_space_point(onscreen), intersection
+        intersection = lineStart + (lineEnd - lineStart) * (
+                    np.dot(planeNormal, planePoint) - np.dot(planeNormal, lineStart)) / np.dot(planeNormal,
+                                                                                               (lineEnd - lineStart))
+
+        return self.project_camera_space_point(onscreen), self.project_camera_space_point(intersection)
