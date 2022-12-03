@@ -6,6 +6,7 @@ import numpy as np
 
 
 class Camera:
+
     @property
     def fov(self) -> np.ndarray:
         return self._fov
@@ -13,7 +14,8 @@ class Camera:
     @fov.setter
     def fov(self, value: float | np.ndarray):
         if not isinstance(value, np.ndarray):
-            value = np.array([value, value / self.resolution[0] * self.resolution[1]])
+            # TODO: better handling of resolutions
+            value = np.array([value, value * self.resolution[1] / self.resolution[0]])
 
         self._fov = value
 
@@ -80,9 +82,15 @@ class Camera:
 
         return transformed
 
+    def uv_to_pixel(self, point: Optional[np.ndarray]) -> Optional[np.ndarray]:
+        if point is None:
+            return None
+        else:
+            return point * self.resolution * np.array([1, -1]) + self.resolution / 2
+
     def _project_camera_space_point(self, point: np.ndarray) -> Optional[np.ndarray]:
 
-        if point[2] < 0:
+        if point[2] < self.focal_length:
             return None
 
         # print(f"{self.focal_length=}, {self.camera_plane=}")
@@ -95,7 +103,7 @@ class Camera:
         if camera_space_point[2] < self.focal_length:
             return None
 
-        return self._project_camera_space_point(camera_space_point)
+        return self.uv_to_pixel(self._project_camera_space_point(camera_space_point))
 
     def project_line(self, start_point, end_point) -> Optional[tuple[np.ndarray, np.ndarray]]:
         cs_start = self._to_camera_space(start_point)
@@ -104,7 +112,8 @@ class Camera:
         if cs_start[2] >= self.focal_length:
 
             if cs_end[2] >= self.focal_length:
-                return self._project_camera_space_point(cs_start), self._project_camera_space_point(cs_end)
+                return self.uv_to_pixel(self._project_camera_space_point(cs_start)), self.uv_to_pixel(
+                    self._project_camera_space_point(cs_end))
 
             else:
                 return self._project_line_cut(cs_start, cs_end)
@@ -120,10 +129,14 @@ class Camera:
         plane_normal = np.array([0, 0, 1])
         plane_point = np.array([0, 0, self.focal_length])
 
+        dotp = np.dot(plane_normal, (offscreen - onscreen))
+        if dotp == 0.0:
+            return self.uv_to_pixel(self._project_camera_space_point(onscreen)), self.uv_to_pixel(
+                self._project_camera_space_point(offscreen))
         # thanks ChatGPT
         # computes the intersection bewteen the line and the camera plane
         intersection = onscreen + (offscreen - onscreen) * (
-                np.dot(plane_normal, plane_point) - np.dot(plane_normal, onscreen)) / np.dot(plane_normal,
-                                                                                             (offscreen - onscreen))
+                np.dot(plane_normal, plane_point) - np.dot(plane_normal, onscreen)) / dotp
 
-        return self._project_camera_space_point(onscreen), self._project_camera_space_point(intersection)
+        return self.uv_to_pixel(self._project_camera_space_point(onscreen)), self.uv_to_pixel(
+            self._project_camera_space_point(intersection))

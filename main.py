@@ -4,7 +4,7 @@ import numpy as np
 import pygame
 from pygame.locals import *
 
-from engine import Camera
+from camera import Camera
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -13,15 +13,8 @@ pygame.init()
 
 
 class MainWindow:
-    resolution = np.array([960, 720])
-    uv_to_screen_factor = resolution * np.array([1, -1])
+    default_resolution = np.array([960, 720])
     font = pygame.font.Font(pygame.font.get_default_font(), 12)
-
-    label_mode_names = [
-        "Screen Space",
-        "Camera Space",
-        "World Space"
-    ]
 
     vertex_buffer = np.array([
         [-1, -1, -1],
@@ -52,15 +45,10 @@ class MainWindow:
 
     def __init__(self):
 
-        self.camera = Camera(self.resolution, fov=120)
+        self.camera = Camera(self.default_resolution, fov=120)
 
-        self.screen = pygame.display.set_mode(self.resolution)
+        self.screen = pygame.display.set_mode(self.default_resolution, pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
-
-        self.display_labels = True
-        self.label_mode = 0
-
-        self.factor = 1.0
 
         self.dt = 1.0
 
@@ -97,9 +85,6 @@ class MainWindow:
         if keys[K_SPACE]:
             self.camera.position += player_speed * self.dt * np.array([0, 1, 0])
 
-        if keys[K_o]:
-            self.factor = 1.0
-
     def draw_screen(self):
         self.screen.fill(BLACK)
 
@@ -116,38 +101,7 @@ class MainWindow:
             if projected_start is None or projected_end is None:
                 continue
 
-            projected_start *= self.uv_to_screen_factor / self.factor
-            projected_end *= self.uv_to_screen_factor / self.factor
-
-            projected_start += self.resolution / 2
-            projected_end += self.resolution / 2
-
             pygame.draw.line(self.screen, WHITE, projected_start, projected_end)
-
-        if self.display_labels:
-            for pt in self.vertex_buffer:
-                screen_pos = self.camera.project_point(pt)
-
-                if screen_pos is not None:
-                    if self.label_mode == 0:
-                        rsp = (screen_pos * self.uv_to_screen_factor + self.resolution / 2).astype(int)
-                        txt = self.font.render(f"({rsp[0]}, {rsp[1]})", True, WHITE)
-                    elif self.label_mode == 1:
-                        cam_space_pos = self.camera._to_camera_space(pt).round(2)
-                        txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True,
-                                               WHITE)
-                    else:
-                        rpt = pt.round(2)
-                        txt = self.font.render(f"({rpt[0]}, {rpt[1]}, {rpt[2]})", True, WHITE)
-
-                    txt_rect = txt.get_rect()
-                    txt_rect.topleft = np.maximum(
-                        0.0,
-                        screen_pos * self.uv_to_screen_factor / self.factor + self.resolution / 2,
-                    )
-                    txt_rect.bottomright = np.minimum(self.resolution, txt_rect.bottomright)
-
-                    self.screen.blit(txt, txt_rect)
 
         pygame.display.flip()
 
@@ -162,26 +116,25 @@ class MainWindow:
                 if pygame.mouse.get_pressed(3)[0]:
                     self.camera.orientation += np.array([
                         0.0,
-                        event.rel[0] * self.mouse_sensitivity * self.resolution[1] / self.resolution[0],
+                        event.rel[0] * self.mouse_sensitivity * self.camera.resolution[1] / self.camera.resolution[0],
                         0.0  # event.rel[1] * self.mouse_sensitivity,
                     ])
 
             if event.type == MOUSEWHEEL:
                 if event.y > 0:
-                    self.factor /= 1.05
+                    self.camera.fov += 1
                 else:
-                    self.factor *= 1.05
+                    self.camera.fov -= 1
 
             if event.type == KEYUP:
-                if event.key == K_l:
-                    self.display_labels = not self.display_labels
-                if event.key == K_TAB:
-                    self.label_mode = (self.label_mode + 1) % 3
-
                 if event.key == K_UP:
                     self.camera.focal_length *= 2.0
                 if event.key == K_DOWN:
                     self.camera.focal_length /= 2.0
+
+            if event.type == WINDOWSIZECHANGED:
+                self.camera.resolution = np.array([event.x, event.y])
+                # self.camera.fov = self.camera.fov
 
         self.handle_keypresses()
 
@@ -190,7 +143,7 @@ class MainWindow:
         rounded_pos = list(map(lambda x: round(x, 2), self.camera.position))
 
         pygame.display.set_caption(
-            f"Position: {rounded_pos} | Focal: {self.camera.focal_length} | Mouse: {pygame.mouse.get_pos()} | {self.label_mode_names[self.label_mode]}")
+            f"Position: {rounded_pos} | FOV: {self.camera.fov[0]} | Mouse: {pygame.mouse.get_pos()}")
 
         return True
 
