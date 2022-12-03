@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pygame
 from pygame.locals import *
@@ -131,7 +133,7 @@ class MainWindow:
                         rsp = (screen_pos * self.uv_to_screen_factor + self.resolution / 2).astype(int)
                         txt = self.font.render(f"({rsp[0]}, {rsp[1]})", True, WHITE)
                     elif self.label_mode == 1:
-                        cam_space_pos = self.camera.to_camera_space(pt).round(2)
+                        cam_space_pos = self.camera._to_camera_space(pt).round(2)
                         txt = self.font.render(f"({cam_space_pos[0]}, {cam_space_pos[1]}, {cam_space_pos[2]})", True,
                                                WHITE)
                     else:
@@ -177,9 +179,9 @@ class MainWindow:
                     self.label_mode = (self.label_mode + 1) % 3
 
                 if event.key == K_UP:
-                    self.camera.update_focal(self.camera.focal_lenght * 2.0)
+                    self.camera.focal_length *= 2.0
                 if event.key == K_DOWN:
-                    self.camera.update_focal(self.camera.focal_lenght / 2.0)
+                    self.camera.focal_length /= 2.0
 
         self.handle_keypresses()
 
@@ -188,7 +190,7 @@ class MainWindow:
         rounded_pos = list(map(lambda x: round(x, 2), self.camera.position))
 
         pygame.display.set_caption(
-            f"Position: {rounded_pos} | Focal: {self.camera.focal_lenght} | Mouse: {pygame.mouse.get_pos()} | {self.label_mode_names[self.label_mode]}")
+            f"Position: {rounded_pos} | Focal: {self.camera.focal_length} | Mouse: {pygame.mouse.get_pos()} | {self.label_mode_names[self.label_mode]}")
 
         return True
 

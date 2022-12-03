@@ -1,43 +1,60 @@
+from __future__ import annotations
+
 from typing import Optional
 
 import numpy as np
 
 
 class Camera:
+    @property
+    def fov(self) -> np.ndarray:
+        return self._fov
 
-    def update_fov(self, fov: np.ndarray | float) -> None:
+    @fov.setter
+    def fov(self, value: float | np.ndarray):
+        if not isinstance(value, np.ndarray):
+            value = np.array([value, value / self.resolution[0] * self.resolution[1]])
 
-        if isinstance(fov, (float, int)):
-            fov = np.array([fov, fov / self.resolution[0] * self.resolution[1]])
+        self._fov = value
 
-        self.fov = fov
+        fov = value / 180 * np.pi
 
-        fov = fov / 180 * np.pi
-
-        x = 2 * self.focal_lenght * np.tan(fov / 2.0)
+        x = 2 * self.focal_length * np.tan(fov / 2.0)
 
         self.camera_plane = np.array([
             x[0],
             x[1],
-            self.focal_lenght,
+            self.focal_length,
         ])
 
-    def update_focal(self, length: float) -> None:
-        self.camera_plane *= length / self.focal_lenght
-        self.focal_lenght = length
+    @property
+    def focal_length(self) -> float:
+        return self._focal_length
 
-    def __init__(self, resolution: np.ndarray, fov: float = 90.0, focal_length: float = 1e-5):
+    @focal_length.setter
+    def focal_length(self, value: float):
+        self.camera_plane *= value / self.focal_length
+        self._focal_length = value
+
+    def __init__(self,
+                 resolution: np.ndarray,
+                 fov: float = 90.0,
+                 focal_length: float = 1e-5,
+                 initial_position: np.ndarray = None,
+                 initial_rotation: np.ndarray = None
+                 ):
         self.camera_plane = None
-        self.fov = None
+        self._fov = None
+        self._focal_length = focal_length
+
         self.resolution = resolution
-        self.focal_lenght = focal_length
 
-        self.update_fov(fov)
+        self.fov = fov
 
-        self.position = np.zeros(3, dtype=float)
-        self.orientation = np.zeros(3, dtype=float)
+        self.position = np.zeros(3, dtype=float) if initial_position is None else initial_position
+        self.orientation = np.zeros(3, dtype=float) if initial_rotation is None else initial_rotation
 
-    def to_camera_space(self, point: np.ndarray) -> np.ndarray:
+    def _to_camera_space(self, point: np.ndarray) -> np.ndarray:
         sin_x = np.sin(self.orientation[2])
         sin_y = np.sin(self.orientation[1])
         cos_x = np.cos(self.orientation[2])
@@ -63,54 +80,50 @@ class Camera:
 
         return transformed
 
-    def project_camera_space_point(self, point: np.ndarray) -> Optional[np.ndarray]:
+    def _project_camera_space_point(self, point: np.ndarray) -> Optional[np.ndarray]:
 
         if point[2] < 0:
             return None
 
-        # print(f"{self.focal_lenght=}, {self.camera_plane=}")
-        return (point[:2] * self.focal_lenght) / (point[2]) / self.camera_plane[:2]
+        # print(f"{self.focal_length=}, {self.camera_plane=}")
+        return (point[:2] * self.focal_length) / (point[2]) / self.camera_plane[:2]
 
     def project_point(self, point: np.ndarray) -> Optional[np.ndarray]:
 
-        camera_space_point = self.to_camera_space(point)
+        camera_space_point = self._to_camera_space(point)
 
-        if camera_space_point[2] < self.focal_lenght:
+        if camera_space_point[2] < self.focal_length:
             return None
 
-        return self.project_camera_space_point(camera_space_point)
+        return self._project_camera_space_point(camera_space_point)
 
     def project_line(self, start_point, end_point) -> Optional[tuple[np.ndarray, np.ndarray]]:
-        cs_start = self.to_camera_space(start_point)
-        cs_end = self.to_camera_space(end_point)
+        cs_start = self._to_camera_space(start_point)
+        cs_end = self._to_camera_space(end_point)
 
-        intersection = cs_end[2] - self.focal_lenght
-        intersection *= cs_end[:2] - cs_start[:2]
+        if cs_start[2] >= self.focal_length:
 
-        intersection /= cs_end[2] - cs_start[2]
-        intersection += cs_end[:2]
-
-        if cs_start[2] >= self.focal_lenght:
-
-            if cs_end[2] >= self.focal_lenght:
-                return self.project_camera_space_point(cs_start), self.project_camera_space_point(cs_end)
+            if cs_end[2] >= self.focal_length:
+                return self._project_camera_space_point(cs_start), self._project_camera_space_point(cs_end)
 
             else:
-                return self.project_line_cut(cs_start, cs_end)
+                return self._project_line_cut(cs_start, cs_end)
 
         else:
-            if cs_end[2] >= self.focal_lenght:
-                return self.project_line_cut(cs_end, cs_start)
+            if cs_end[2] >= self.focal_length:
+                return self._project_line_cut(cs_end, cs_start)
 
             else:
-                return self.project_line_cut(cs_end, cs_start)
+                return self._project_line_cut(cs_end, cs_start)
 
-    def project_line_cut(self, onscreen: np.ndarray, offscreen: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _project_line_cut(self, onscreen: np.ndarray, offscreen: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         plane_normal = np.array([0, 0, 1])
-        plane_point = np.array([0, 0, self.focal_lenght])
+        plane_point = np.array([0, 0, self.focal_length])
 
+        # thanks ChatGPT
+        # computes the intersection bewteen the line and the camera plane
         intersection = onscreen + (offscreen - onscreen) * (
                 np.dot(plane_normal, plane_point) - np.dot(plane_normal, onscreen)) / np.dot(plane_normal,
-                                                                                          (offscreen - onscreen))
+                                                                                             (offscreen - onscreen))
 
-        return self.project_camera_space_point(onscreen), self.project_camera_space_point(intersection)
+        return self._project_camera_space_point(onscreen), self._project_camera_space_point(intersection)
