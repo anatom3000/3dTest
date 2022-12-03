@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 
-class Camera:
+class Viewport:
 
     @property
     def fov(self) -> np.ndarray:

@@ -4,7 +4,8 @@ import numpy as np
 import pygame
 from pygame.locals import *
 
-from camera import Camera
+from renderer import Renderer
+from viewport import Viewport
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -45,7 +46,13 @@ class MainWindow:
 
     def __init__(self):
 
-        self.camera = Camera(self.default_resolution, fov=120)
+        camera = Viewport(self.default_resolution, fov=120)
+
+        colors = [WHITE for _ in self.edge_buffer]
+
+        self.renderer = Renderer(camera, self.vertex_buffer, self.edge_buffer, colors)
+
+        self.camera = self.renderer.camera
 
         self.screen = pygame.display.set_mode(self.default_resolution, pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
@@ -87,22 +94,7 @@ class MainWindow:
 
     def draw_screen(self):
         self.screen.fill(BLACK)
-
-        for start, end in self.edge_buffer:
-            projected_line = self.camera.project_line(self.vertex_buffer[start], self.vertex_buffer[end])
-
-            # print(f"{projected_start = }, {projected_end = }")
-
-            if projected_line is None:
-                continue
-
-            projected_start, projected_end = projected_line
-
-            if projected_start is None or projected_end is None:
-                continue
-
-            pygame.draw.line(self.screen, WHITE, projected_start, projected_end)
-
+        self.renderer.render(self.screen)
         pygame.display.flip()
 
     def update(self):
