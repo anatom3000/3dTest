@@ -38,6 +38,26 @@ class Viewport:
         self.camera_plane *= value / self.focal_length
         self._focal_length = value
 
+    @property
+    def orientation(self) -> np.ndarray:
+        return self._orientation
+
+    @orientation.setter
+    def orientation(self, value: np.ndarray):
+        self._orientation = value
+
+        sin_x = np.sin(self.orientation[2])
+        sin_y = np.sin(self.orientation[1])
+        cos_x = np.cos(self.orientation[2])
+        cos_y = np.cos(self.orientation[1])
+        sin_z = np.sin(self.orientation[0])
+        cos_z = np.cos(self.orientation[0])
+
+        self._rot_yaw_matrix = np.array([cos_z, -sin_z, sin_z, cos_z]).reshape((2, 2))
+        self._rot_pitch_matrix = np.array([cos_y, -sin_y, sin_y, cos_y]).reshape((2, 2))
+        self._rot_roll_matrix = np.array([cos_x, -sin_x, sin_x, cos_x]).reshape((2, 2))
+
+
     def __init__(self,
                  resolution: np.ndarray,
                  fov: float = 90.0,
@@ -45,6 +65,9 @@ class Viewport:
                  initial_position: np.ndarray = None,
                  initial_rotation: np.ndarray = None
                  ):
+        self._rot_roll_matrix = None
+        self._rot_yaw_matrix = None
+        self._rot_pitch_matrix = None
         self.camera_plane = None
         self._fov = None
         self._focal_length = focal_length
@@ -57,26 +80,20 @@ class Viewport:
         self.orientation = np.zeros(3, dtype=float) if initial_rotation is None else initial_rotation
 
     def _to_camera_space(self, point: np.ndarray) -> np.ndarray:
-        sin_x = np.sin(self.orientation[2])
-        sin_y = np.sin(self.orientation[1])
-        cos_x = np.cos(self.orientation[2])
-        cos_y = np.cos(self.orientation[1])
-        sin_z = np.sin(self.orientation[0])
-        cos_z = np.cos(self.orientation[0])
 
         transformed = point - self.position
 
         # TODO: rewrite camera space rotation
         transformed[:2] = np.matmul(
-            np.array([cos_z, -sin_z, sin_z, cos_z]).reshape((2, 2)),
+            self._rot_yaw_matrix,
             transformed[:2]
         )  # yaw
         transformed[::2] = np.matmul(
-            np.array([cos_y, -sin_y, sin_y, cos_y]).reshape((2, 2)),
+            self._rot_pitch_matrix,
             transformed[::2]
         )  # pitch
         transformed[1:] = np.matmul(
-            np.array([cos_x, -sin_x, sin_x, cos_x]).reshape((2, 2)),
+            self._rot_roll_matrix,
             transformed[1:]
         )  # roll
 

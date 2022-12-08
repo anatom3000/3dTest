@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import random
+
 import numpy as np
 import pygame
 from pygame.locals import *
 
+import meshes
 from renderer import Renderer
 from viewport import Viewport
 
@@ -46,9 +49,10 @@ class MainWindow:
 
     def __init__(self):
 
+        # data_loader.load("assets/cube.obj")
         camera = Viewport(self.default_resolution, fov=120)
 
-        colors = [WHITE for _ in self.edge_buffer]
+        colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in self.edge_buffer]
 
         self.renderer = Renderer(camera, self.vertex_buffer, self.edge_buffer, colors)
 
@@ -58,6 +62,11 @@ class MainWindow:
         self.clock = pygame.time.Clock()
 
         self.dt = 1.0
+
+    def shuffle_colors(self):
+        colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in self.edge_buffer]
+
+        self.renderer.edge_colors = colors
 
     def handle_keypresses(self):
         keys = pygame.key.get_pressed()
@@ -85,6 +94,9 @@ class MainWindow:
             self.camera.position += player_speed * self.dt * np.array(
                 [np.cos(self.camera.orientation[1]), 0.0, -np.sin(self.camera.orientation[1])],
                 dtype=float)
+
+        if keys[K_c]:
+            self.shuffle_colors()
 
         if keys[K_LSHIFT]:
             self.camera.position += player_speed * self.dt * np.array([0, -1, 0])
