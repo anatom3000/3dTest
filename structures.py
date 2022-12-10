@@ -68,7 +68,10 @@ class Object:
         self._center = None
         return self
 
-    def rotate(self, orientation: np.ndarray) -> Self:
+    def rotate(self, orientation: np.ndarray, center: np.ndarray = None) -> Self:
+        if center is None:
+            center = self.center
+
         sin_x = np.sin(orientation[2])
         sin_y = np.sin(orientation[1])
         cos_x = np.cos(orientation[2])
@@ -96,7 +99,9 @@ class Object:
 
         rotation_matrix = np.matmul(rot_roll_matrix, np.matmul(rot_pitch_matrix, rot_yaw_matrix))
 
-        return self.apply_transform(rotation_matrix)
+        self.apply_transform(offset_vector=-center)
+
+        return self.apply_transform(rotation_matrix, center)
 
     def scale(self, scale_or_x: float, y: float = None, z: float = None, center: np.ndarray = None) -> Self:
         if center is None:

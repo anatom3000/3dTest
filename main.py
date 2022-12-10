@@ -22,6 +22,8 @@ class MainWindow:
 
     mouse_sensitivity = 1 / 100.0
 
+    rotation_speed = np.pi/4
+
     def __init__(self):
 
         camera = Viewport(self.default_resolution, fov=120)
@@ -30,7 +32,7 @@ class MainWindow:
 
         print(len(model.triangles))
         scene = [
-            model.set_center(np.zeros(3)).scale(2).rotate(np.array([0.0, 0.0, np.pi / 2])).flip(y=True)
+            model.set_center(np.array([0.0, 0.0, 5.0])).scale(2).rotate(np.array([0.0, 0.0, np.pi / 2])).flip(y=True)
         ]
 
         self.renderer = Renderer(camera, scene)
@@ -77,6 +79,9 @@ class MainWindow:
 
     def draw_screen(self):
         self.screen.fill(BLACK)
+
+        self.renderer.objects[0].rotate(np.array([0.0, self.rotation_speed * self.dt, 0.0]))
+
         self.renderer.render(self.screen)
         pygame.display.flip()
 
