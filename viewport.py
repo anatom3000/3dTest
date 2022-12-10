@@ -57,7 +57,6 @@ class Viewport:
         self._rot_pitch_matrix = np.array([cos_y, -sin_y, sin_y, cos_y]).reshape((2, 2))
         self._rot_roll_matrix = np.array([cos_x, -sin_x, sin_x, cos_x]).reshape((2, 2))
 
-
     def __init__(self,
                  resolution: np.ndarray,
                  fov: float = 90.0,

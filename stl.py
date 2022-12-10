@@ -5,7 +5,7 @@ import numpy as np
 from structures import Triangle, Object
 
 
-def parse_ascii(stl_path: str) -> Object:
+def load_ascii(stl_path: str) -> Object:
     with open(stl_path, mode='r') as f:
         lines = f.readlines()
 
@@ -46,7 +46,7 @@ def parse_ascii(stl_path: str) -> Object:
     return Object(triangles=triangles)
 
 
-def parse_binary(stl_path: str) -> Object:
+def load_binary(stl_path: str) -> Object:
     # read the binary STL file as a binary string
     with open(stl_path, 'rb') as f:
         stl_string = f.read()
@@ -87,8 +87,8 @@ def parse_binary(stl_path: str) -> Object:
     return Object(triangles=triangles)
 
 
-def parse(stl_path: str, binary: bool = True) -> Object:
+def load(stl_path: str, binary: bool = True) -> Object:
     if binary:
-        return parse_binary(stl_path)
+        return load_binary(stl_path)
     else:
-        return parse_ascii(stl_path)
+        return load_ascii(stl_path)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -37,6 +39,7 @@ class Triangle:
             offset_vector = np.zeros(3, dtype=np.float32)
 
         self.vertices = [np.matmul(transform_matrix, v) + offset_vector for v in self.vertices]
+        self._edges = None
 
 
 @dataclass
@@ -51,15 +54,21 @@ class Object:
             points = []
             for t in self.triangles:
                 points.extend(t.vertices)
-            self._center = np.sum(np.array(points)) / len(points)
+            self._center = np.sum(np.array(points), axis=0) / len(points)
 
         return self._center
 
-    def apply_transform(self, transform_matrix: np.ndarray = None, offset_vector: np.ndarray = None):
+    @center.setter
+    def center(self, value: np.ndarray):
+        self.move(value - self.center)
+
+    def apply_transform(self, transform_matrix: np.ndarray = None, offset_vector: np.ndarray = None) -> Self:
         for t in self.triangles:
             t.apply_transform(transform_matrix, offset_vector)
+        self._center = None
+        return self
 
-    def rotate(self, orientation: np.ndarray):
+    def rotate(self, orientation: np.ndarray) -> Self:
         sin_x = np.sin(orientation[2])
         sin_y = np.sin(orientation[1])
         cos_x = np.cos(orientation[2])
@@ -87,35 +96,41 @@ class Object:
 
         rotation_matrix = np.matmul(rot_roll_matrix, np.matmul(rot_pitch_matrix, rot_yaw_matrix))
 
-        self.apply_transform(rotation_matrix)
+        return self.apply_transform(rotation_matrix)
 
-    def scale(self, scale_or_x: float, y: float = None, z: float = None, center: np.ndarray = None):
+    def scale(self, scale_or_x: float, y: float = None, z: float = None, center: np.ndarray = None) -> Self:
         if center is None:
             center = self.center
 
         if y is None and z is None:
             y = z = scale_or_x
 
-        self.apply_transform(np.array([
+        self.apply_transform(offset_vector=-center)
+
+        return self.apply_transform(np.array([
             [scale_or_x, 0, 0],
             [0, y, 0],
             [0, 0, z]
-        ]), -center)
+        ]), center)
 
-    def move(self, offset: np.ndarray):
-        self.apply_transform(offset_vector=offset)
+    def move(self, offset: np.ndarray) -> Self:
+        return self.apply_transform(offset_vector=offset)
 
-    def flip(self, x: bool = False, y: bool = False, z: bool = False, center: np.ndarray = None):
+    def set_center(self, position: np.ndarray):
+        self.center = position
+        return self
+
+    def flip(self, x: bool = False, y: bool = False, z: bool = False, center: np.ndarray = None) -> Self:
         if center is None:
             center = self.center
 
-        self.apply_transform(offset_vector=center)
+        self.apply_transform(offset_vector=-center)
 
-        self.apply_transform(np.array([
+        return self.apply_transform(np.array([
             [(-1 if x else 1), 0, 0],
             [0, (-1 if y else 1), 0],
             [0, 0, (-1 if z else 1)],
-        ]), -center)
+        ]), center)
 
-    def normalize_size(self, min_coords: np.ndarray = None, max_coords: np.ndarray = None):
+    def normalize_size(self, min_coords: np.ndarray = None, max_coords: np.ndarray = None) -> Self:
         pass
